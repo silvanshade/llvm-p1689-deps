@@ -21,6 +21,8 @@ enum class ShowIncludesDestination { None, Stdout, Stderr };
 /// DependencyOutputFormat - Format for the compiler dependency file.
 enum class DependencyOutputFormat { Make, NMake };
 
+enum class StructuredDependencyOutputFormat { Make, P1689 };
+
 /// ExtraDepKind - The kind of extra dependency file.
 enum ExtraDepKind {
   EDK_SanitizeIgnorelist,
@@ -63,8 +65,13 @@ public:
   /// The format for the dependency file.
   DependencyOutputFormat OutputFormat = DependencyOutputFormat::Make;
 
+  StructuredDependencyOutputFormat StructuredOutputFormat =
+      StructuredDependencyOutputFormat::P1689;
+
   /// The file to write dependency output to.
   std::string OutputFile;
+
+  std::string StructuredOutputFile;
 
   /// The file to write header include output to. This is orthogonal to
   /// ShowHeaderIncludes (-H) and will include headers mentioned in the

@@ -1092,6 +1092,19 @@ void Clang::AddPreprocessingOptions(Compilation &C, const JobAction &JA,
   Args.AddLastArg(CmdArgs, options::OPT_MP);
   Args.AddLastArg(CmdArgs, options::OPT_MV);
 
+  if (Arg const *FDepsFile = Args.getLastArg(options::OPT_fdeps_file_EQ)) {
+    auto const *const File = FDepsFile->getValue();
+    llvm::dbgs() << "-structured-dependency-output" << " " << File << "\n";
+    CmdArgs.push_back("-structured-dependency-output");
+    CmdArgs.push_back(File);
+  }
+  if (Arg const *FDepsFormat = Args.getLastArg(options::OPT_fdeps_format_EQ)) {
+    auto const *const Format = FDepsFormat->getValue();
+    llvm::dbgs() << "-structured-dependency-format" << " " << Format << "\n";
+    CmdArgs.push_back("-structured-dependency-format");
+    CmdArgs.push_back(Format);
+  }
+
   // Add offload include arguments specific for CUDA/HIP/SYCL. This must happen
   // before we -I or -include anything else, because we must pick up the
   // CUDA/HIP/SYCL headers from the particular CUDA/ROCm/SYCL installation,

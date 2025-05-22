@@ -3431,6 +3431,24 @@ def fmodule_header_EQ : Joined<["-"], "fmodule-header=">, Group<f_Group>,
   MetaVarName<"<kind>">,
   HelpText<"Build a C++20 Header Unit from a header that should be found in the user (fmodule-header=user) or system (fmodule-header=system) search path.">;
 
+def fdeps_file_EQ : Joined <["-"], "fdeps-file=">, Group<Preprocessor_Group>,
+  Visibility<[ClangOption, CLOption]>, MetaVarName<"<path>">,
+  HelpText<"Where to write structured dependency information">;
+def fdeps_format_EQ : Joined <["-"], "fdeps-format=">, Group<Preprocessor_Group>,
+  Visibility<[ClangOption, CLOption]>, MetaVarName<"<format>">,
+  HelpText<"The format to use for structured dependency information">;
+
+def structured_dependency_output : Separate <["-"], "structured-dependency-output">, Group<Preprocessor_Group>,
+  Visibility<[CC1Option]>, MetaVarName<"<path>">,
+  HelpText<"Where to write structured dependency information">,
+  MarshallingInfoString<DependencyOutputOpts<"StructuredOutputFile">>;
+def structured_dependency_format : Separate <["-"], "structured-dependency-format">, Group<Preprocessor_Group>,
+  Visibility<[CC1Option]>, MetaVarName<"<format>">,
+  HelpText<"The format to use for structured dependency information">,
+  Values<"make,p1689">,
+  NormalizedValues<["StructuredDependencyOutputFormat::Make", "StructuredDependencyOutputFormat::P1689"]>,
+  MarshallingInfoFlag<DependencyOutputOpts<"StructuredOutputFormat">, "StructuredDependencyOutputFormat::P1689">;
+
 def fno_knr_functions : Flag<["-"], "fno-knr-functions">, Group<f_Group>,
   MarshallingInfoFlag<LangOpts<"DisableKNRFunctions">>,
   HelpText<"Disable support for K&R C function declarations">,

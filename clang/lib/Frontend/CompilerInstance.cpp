@@ -21,6 +21,7 @@
 #include "clang/Basic/Version.h"
 #include "clang/Config/config.h"
 #include "clang/Frontend/ChainedDiagnosticConsumer.h"
+#include "clang/Frontend/DependencyOutputOptions.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Frontend/FrontendDiagnostic.h"
@@ -497,6 +498,22 @@ void CompilerInstance::createPreprocessor(TranslationUnitKind TUKind) {
   if (!DepOpts.DOTOutputFile.empty())
     AttachDependencyGraphGen(*PP, DepOpts.DOTOutputFile,
                              getHeaderSearchOpts().Sysroot);
+
+  // FIXME: handle `fdeps-`
+  {
+    llvm::dbgs() << "StructuredOutputFile: " << DepOpts.StructuredOutputFile
+                 << "\n";
+    std::string format;
+    if (DepOpts.StructuredOutputFormat ==
+        StructuredDependencyOutputFormat::Make) {
+      format = "make";
+    }
+    if (DepOpts.StructuredOutputFormat ==
+        StructuredDependencyOutputFormat::P1689) {
+      format = "p1689";
+    }
+    llvm::dbgs() << "StructuredOutputFormat: " << format << "\n";
+  }
 
   // If we don't have a collector, but we are collecting module dependencies,
   // then we're the top level compiler instance and need to create one.
