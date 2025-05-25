@@ -20,6 +20,11 @@
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Basic/Version.h"
 #include "clang/Config/config.h"
+#include "clang/DependencyAnalysis/DepFileGenerator.h"
+#include "clang/DependencyAnalysis/HeaderIncludeGenerator.h"
+#include "clang/DependencyAnalysis/ModuleFileCollector.h"
+#include "clang/DependencyAnalysis/StructuredDependencyFile.h"
+#include "clang/DependencyAnalysis/StructuredDependencyOutputOptions.h"
 #include "clang/Frontend/ChainedDiagnosticConsumer.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Frontend/FrontendActions.h"
@@ -210,18 +215,18 @@ void CompilerInstance::setASTReader(IntrusiveRefCntPtr<ASTReader> Reader) {
   TheASTReader = std::move(Reader);
 }
 
-std::shared_ptr<ModuleDependencyCollector>
+std::shared_ptr<ModuleFileCollector>
 CompilerInstance::getModuleDepCollector() const {
   return ModuleDepCollector;
 }
 
 void CompilerInstance::setModuleDepCollector(
-    std::shared_ptr<ModuleDependencyCollector> Collector) {
+    std::shared_ptr<ModuleFileCollector> Collector) {
   ModuleDepCollector = std::move(Collector);
 }
 
 static void collectHeaderMaps(const HeaderSearch &HS,
-                              std::shared_ptr<ModuleDependencyCollector> MDC) {
+                              std::shared_ptr<ModuleFileCollector> MDC) {
   SmallVector<std::string, 4> HeaderMapFileNames;
   HS.getHeaderMapFileNames(HeaderMapFileNames);
   for (auto &Name : HeaderMapFileNames)
@@ -229,7 +234,7 @@ static void collectHeaderMaps(const HeaderSearch &HS,
 }
 
 static void collectIncludePCH(CompilerInstance &CI,
-                              std::shared_ptr<ModuleDependencyCollector> MDC) {
+                              std::shared_ptr<ModuleFileCollector> MDC) {
   const PreprocessorOptions &PPOpts = CI.getPreprocessorOpts();
   if (PPOpts.ImplicitPCHInclude.empty())
     return;
@@ -262,7 +267,7 @@ static void collectIncludePCH(CompilerInstance &CI,
 }
 
 static void collectVFSEntries(CompilerInstance &CI,
-                              std::shared_ptr<ModuleDependencyCollector> MDC) {
+                              std::shared_ptr<ModuleFileCollector> MDC) {
   if (CI.getHeaderSearchOpts().VFSOverlayFiles.empty())
     return;
 
@@ -492,18 +497,25 @@ void CompilerInstance::createPreprocessor(TranslationUnitKind TUKind) {
         getSpecificModuleCachePath(ModuleHash));
   }
 
-  // Handle generating dependencies, if requested.
-  const DependencyOutputOptions &DepOpts = getDependencyOutputOpts();
+  // Handle generating depfiles, if requested.
+  const DepFileOutputOptions &DepOpts = getDependencyOutputOpts();
   if (!DepOpts.OutputFile.empty())
-    addDependencyCollector(std::make_shared<DependencyFileGenerator>(DepOpts));
+    addDependencyCollector(std::make_shared<DepFileGenerator>(DepOpts));
   if (!DepOpts.DOTOutputFile.empty())
     AttachDependencyGraphGen(*PP, DepOpts.DOTOutputFile,
                              getHeaderSearchOpts().Sysroot);
 
+  const StructuredDependencyOutputOptions &SDepOpts =
+      getStructuredDependencyOutputOpts();
+
+  if (!SDepOpts.OutputFile.empty()) {
+    addDependencyCollector(StructuredDependencyFileGenerator::Create(SDepOpts));
+  }
+
   // If we don't have a collector, but we are collecting module dependencies,
   // then we're the top level compiler instance and need to create one.
   if (!ModuleDepCollector && !DepOpts.ModuleDependencyOutputDir.empty()) {
-    ModuleDepCollector = std::make_shared<ModuleDependencyCollector>(
+    ModuleDepCollector = std::make_shared<ModuleFileCollector>(
         DepOpts.ModuleDependencyOutputDir);
   }
 
@@ -521,20 +533,20 @@ void CompilerInstance::createPreprocessor(TranslationUnitKind TUKind) {
 
   // Handle generating header include information, if requested.
   if (DepOpts.ShowHeaderIncludes)
-    AttachHeaderIncludeGen(*PP, DepOpts);
+    AttachHeaderIncludeGenerator(*PP, DepOpts);
   if (!DepOpts.HeaderIncludeOutputFile.empty()) {
     StringRef OutputPath = DepOpts.HeaderIncludeOutputFile;
     if (OutputPath == "-")
       OutputPath = "";
-    AttachHeaderIncludeGen(*PP, DepOpts,
-                           /*ShowAllHeaders=*/true, OutputPath,
-                           /*ShowDepth=*/false);
+    AttachHeaderIncludeGenerator(*PP, DepOpts,
+                                 /*ShowAllHeaders=*/true, OutputPath,
+                                 /*ShowDepth=*/false);
   }
 
   if (DepOpts.ShowIncludesDest != ShowIncludesDestination::None) {
-    AttachHeaderIncludeGen(*PP, DepOpts,
-                           /*ShowAllHeaders=*/true, /*OutputPath=*/"",
-                           /*ShowDepth=*/true, /*MSStyle=*/true);
+    AttachHeaderIncludeGenerator(*PP, DepOpts,
+                                 /*ShowAllHeaders=*/true, /*OutputPath=*/"",
+                                 /*ShowDepth=*/true, /*MSStyle=*/true);
   }
 }
 
@@ -1265,7 +1277,7 @@ compileModuleImpl(CompilerInstance &ImportingInstance, SourceLocation ImportLoc,
   // between all of the module CompilerInstances. Other than that, we don't
   // want to produce any dependency output from the module build.
   Instance.setModuleDepCollector(ImportingInstance.getModuleDepCollector());
-  Inv.getDependencyOutputOpts() = DependencyOutputOptions();
+  Inv.getDependencyOutputOpts() = DepFileOutputOptions();
 
   ImportingInstance.getDiagnostics().Report(ImportLoc,
                                             diag::remark_module_build)

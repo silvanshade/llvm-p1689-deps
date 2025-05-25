@@ -208,6 +208,11 @@ llvm::SmallString<256>
 getCXX20NamedModuleOutputPath(const llvm::opt::ArgList &Args,
                               const char *BaseInput);
 
+llvm::SmallString<256>
+getStructuredDependencyOutputPath(const llvm::opt::ArgList &Args,
+                                  const char *BaseInput,
+                                  std::optional<StringRef> &FDepsFormat);
+
 } // end namespace tools
 
 } // end namespace driver

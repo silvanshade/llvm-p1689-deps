@@ -28,6 +28,7 @@
 #include "clang/Basic/CLWarnings.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/CodeGenOptions.h"
+#include "clang/Basic/DiagnosticDriver.h"
 #include "clang/Basic/HeaderInclude.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/MakeSupport.h"
@@ -4089,6 +4090,36 @@ clang::driver::tools::getCXX20NamedModuleOutputPath(const ArgList &Args,
   return OutputPath;
 }
 
+llvm::SmallString<256> clang::driver::tools::getStructuredDependencyOutputPath(
+    const ArgList &Args, const char *BaseInput,
+    std::optional<StringRef> &FDepsFormat) {
+  if (Arg *FDepsFile = Args.getLastArg(options::OPT_fdeps_file_EQ)) {
+    return StringRef(FDepsFile->getValue());
+  }
+
+  SmallString<256> OutputPath;
+  if (Arg *FinalOutput = Args.getLastArg(options::OPT_o)) {
+    OutputPath = FinalOutput->getValue();
+  } else {
+    OutputPath = BaseInput;
+  }
+
+  if (!FDepsFormat.has_value()) {
+    FDepsFormat = "p1689r5";
+  }
+
+  StringRef ext;
+  if (*FDepsFormat == "p1689r5") {
+    ext = ".ddi";
+  } else {
+    llvm_unreachable("Unknown -fdeps-format value");
+  }
+
+  llvm::sys::path::replace_extension(OutputPath, ext);
+
+  return OutputPath;
+}
+
 static bool RenderModulesOptions(Compilation &C, const Driver &D,
                                  const ArgList &Args, const InputInfo &Input,
                                  const InputInfo &Output, bool HaveStd20,
@@ -4313,6 +4344,33 @@ static bool RenderModulesOptions(Compilation &C, const Driver &D,
 
   if (Args.hasArg(options::OPT_fmodules_embed_all_files))
     CmdArgs.push_back("-fmodules-embed-all-files");
+
+  std::optional<llvm::SmallString<256>> FDepsFileVal = std::nullopt;
+  if (Arg const *FDepsFile = Args.getLastArg(options::OPT_fdeps_file_EQ)) {
+    FDepsFileVal = FDepsFile->getValue();
+  } else if (Args.hasArg(options::OPT_fdeps_file)) {
+    FDepsFileVal = "";
+  }
+
+  if (FDepsFileVal.has_value()) {
+    // Only process `fdeps-format` if `fdeps-file` is found, for unusage report.
+    std::optional<StringRef> FDepsFormatVal;
+    if (Arg const *FDepsFormat =
+            Args.getLastArg(options::OPT_fdeps_format_EQ)) {
+      FDepsFormatVal = FDepsFormat->getValue();
+      if (FDepsFormatVal == "p1689r5") {
+        // noop
+      } else {
+        D.Diag(diag::err_drv_unsupported_option_argument)
+            << FDepsFormat->getSpelling() << *FDepsFormatVal;
+      }
+    }
+    if (FDepsFileVal->empty()) {
+      FDepsFileVal = getStructuredDependencyOutputPath(
+          Args, Input.getBaseInput(), FDepsFormatVal);
+    }
+    CmdArgs.push_back(Args.MakeArgString("-fdeps-file=" + *FDepsFileVal));
+  }
 
   return HaveModules;
 }

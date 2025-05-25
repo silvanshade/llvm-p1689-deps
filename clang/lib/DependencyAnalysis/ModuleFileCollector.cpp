@@ -1,21 +1,7 @@
-//===--- ModuleDependencyCollector.cpp - Collect module dependencies ------===//
-//
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
-//
-// Collect the dependencies of a set of modules.
-//
-//===----------------------------------------------------------------------===//
-
+#include "clang/DependencyAnalysis/ModuleFileCollector.h"
 #include "clang/Basic/CharInfo.h"
-#include "clang/Frontend/Utils.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Serialization/ASTReader.h"
-#include "llvm/ADT/iterator_range.h"
-#include "llvm/Config/llvm-config.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
@@ -24,12 +10,11 @@ using namespace clang;
 
 namespace {
 /// Private implementations for ModuleDependencyCollector
-class ModuleDependencyListener : public ASTReaderListener {
-  ModuleDependencyCollector &Collector;
+class ModuleFileListener : public ASTReaderListener {
+  ModuleFileCollector &Collector;
   FileManager &FileMgr;
 public:
-  ModuleDependencyListener(ModuleDependencyCollector &Collector,
-                           FileManager &FileMgr)
+  ModuleFileListener(ModuleFileCollector &Collector, FileManager &FileMgr)
       : Collector(Collector), FileMgr(FileMgr) {}
   bool needsInputFileVisitation() override { return true; }
   bool needsSystemInputFileVisitation() override { return true; }
@@ -44,11 +29,10 @@ public:
   }
 };
 
-struct ModuleDependencyPPCallbacks : public PPCallbacks {
-  ModuleDependencyCollector &Collector;
+struct ModuleFilePPCallbacks : public PPCallbacks {
+  ModuleFileCollector &Collector;
   SourceManager &SM;
-  ModuleDependencyPPCallbacks(ModuleDependencyCollector &Collector,
-                              SourceManager &SM)
+  ModuleFilePPCallbacks(ModuleFileCollector &Collector, SourceManager &SM)
       : Collector(Collector), SM(SM) {}
 
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
@@ -64,9 +48,9 @@ struct ModuleDependencyPPCallbacks : public PPCallbacks {
   }
 };
 
-struct ModuleDependencyMMCallbacks : public ModuleMapCallbacks {
-  ModuleDependencyCollector &Collector;
-  ModuleDependencyMMCallbacks(ModuleDependencyCollector &Collector)
+struct ModuleFileMMCallbacks : public ModuleMapCallbacks {
+  ModuleFileCollector &Collector;
+  ModuleFileMMCallbacks(ModuleFileCollector &Collector)
       : Collector(Collector) {}
 
   void moduleMapAddHeader(StringRef HeaderPath) override {
@@ -80,16 +64,16 @@ struct ModuleDependencyMMCallbacks : public ModuleMapCallbacks {
 
 } // namespace
 
-void ModuleDependencyCollector::attachToASTReader(ASTReader &R) {
+void ModuleFileCollector::attachToASTReader(ASTReader &R) {
   R.addListener(
-      std::make_unique<ModuleDependencyListener>(*this, R.getFileManager()));
+      std::make_unique<ModuleFileListener>(*this, R.getFileManager()));
 }
 
-void ModuleDependencyCollector::attachToPreprocessor(Preprocessor &PP) {
-  PP.addPPCallbacks(std::make_unique<ModuleDependencyPPCallbacks>(
-      *this, PP.getSourceManager()));
+void ModuleFileCollector::attachToPreprocessor(Preprocessor &PP) {
+  PP.addPPCallbacks(
+      std::make_unique<ModuleFilePPCallbacks>(*this, PP.getSourceManager()));
   PP.getHeaderSearchInfo().getModuleMap().addModuleMapCallbacks(
-      std::make_unique<ModuleDependencyMMCallbacks>(*this));
+      std::make_unique<ModuleFileMMCallbacks>(*this));
 }
 
 static bool isCaseSensitivePath(StringRef Path) {
@@ -110,7 +94,7 @@ static bool isCaseSensitivePath(StringRef Path) {
   return true;
 }
 
-void ModuleDependencyCollector::writeFileMap() {
+void ModuleFileCollector::writeFileMap() {
   if (Seen.empty())
     return;
 
@@ -139,8 +123,7 @@ void ModuleDependencyCollector::writeFileMap() {
   VFSWriter.write(OS);
 }
 
-std::error_code ModuleDependencyCollector::copyToRoot(StringRef Src,
-                                                      StringRef Dst) {
+std::error_code ModuleFileCollector::copyToRoot(StringRef Src, StringRef Dst) {
   using namespace llvm::sys;
   llvm::FileCollector::PathCanonicalizer::PathStorage Paths =
       Canonicalizer.canonicalize(Src);
@@ -176,7 +159,7 @@ std::error_code ModuleDependencyCollector::copyToRoot(StringRef Src,
   return std::error_code();
 }
 
-void ModuleDependencyCollector::addFile(StringRef Filename, StringRef FileDst) {
+void ModuleFileCollector::addFile(StringRef Filename, StringRef FileDst) {
   if (insertSeen(Filename))
     if (copyToRoot(Filename, FileDst))
       HasErrors = true;

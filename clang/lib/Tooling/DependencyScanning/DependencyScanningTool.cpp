@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/Tooling/DependencyScanning/DependencyScanningTool.h"
-#include "clang/Frontend/Utils.h"
+#include "clang/DependencyAnalysis/DepFileGenerator.h"
 #include <optional>
 
 using namespace clang;
@@ -25,9 +25,8 @@ class MakeDependencyPrinterConsumer : public DependencyConsumer {
 public:
   void handleBuildCommand(Command) override {}
 
-  void
-  handleDependencyOutputOpts(const DependencyOutputOptions &Opts) override {
-    this->Opts = std::make_unique<DependencyOutputOptions>(Opts);
+  void handleDependencyOutputOpts(const DepFileOutputOptions &Opts) override {
+    this->Opts = std::make_unique<DepFileOutputOptions>(Opts);
   }
 
   void handleFileDependency(StringRef File) override {
@@ -45,18 +44,18 @@ public:
   void printDependencies(std::string &S) {
     assert(Opts && "Handled dependency output options.");
 
-    class DependencyPrinter : public DependencyFileGenerator {
+    class DependencyPrinter : public DepFileGenerator {
     public:
-      DependencyPrinter(DependencyOutputOptions &Opts,
+      DependencyPrinter(DepFileOutputOptions &Opts,
                         ArrayRef<std::string> Dependencies)
-          : DependencyFileGenerator(Opts) {
+          : DepFileGenerator(Opts) {
         for (const auto &Dep : Dependencies)
           addDependency(Dep);
       }
 
       void printDependencies(std::string &S) {
         llvm::raw_string_ostream OS(S);
-        outputDependencyFile(OS);
+        outputDepFile(OS);
       }
     };
 
@@ -65,7 +64,7 @@ public:
   }
 
 protected:
-  std::unique_ptr<DependencyOutputOptions> Opts;
+  std::unique_ptr<DepFileOutputOptions> Opts;
   std::vector<std::string> Dependencies;
 };
 } // anonymous namespace
@@ -105,7 +104,7 @@ llvm::Expected<P1689Rule> DependencyScanningTool::getP1689ModuleDependencyFile(
     }
 
     StringRef getMakeFormatDependencyOutputPath() {
-      if (Opts->OutputFormat != DependencyOutputFormat::Make)
+      if (Opts->OutputFormat != DepFileOutputFormat::Make)
         return {};
       return Opts->OutputFile;
     }

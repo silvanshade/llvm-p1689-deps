@@ -10,6 +10,7 @@
 #include "clang/Basic/DiagnosticDriver.h"
 #include "clang/Basic/DiagnosticFrontend.h"
 #include "clang/Basic/DiagnosticSerialization.h"
+#include "clang/DependencyAnalysis/DepFileGenerator.h"
 #include "clang/Driver/Compilation.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Driver/Job.h"
@@ -18,7 +19,6 @@
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
-#include "clang/Frontend/Utils.h"
 #include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Serialization/ObjectFilePCHContainerReader.h"
 #include "clang/Tooling/DependencyScanning/DependencyScanningService.h"
@@ -37,11 +37,11 @@ using namespace dependencies;
 namespace {
 
 /// Forwards the gatherered dependencies to the consumer.
-class DependencyConsumerForwarder : public DependencyFileGenerator {
+class DependencyConsumerForwarder : public DepFileGenerator {
 public:
-  DependencyConsumerForwarder(std::unique_ptr<DependencyOutputOptions> Opts,
+  DependencyConsumerForwarder(std::unique_ptr<DepFileOutputOptions> Opts,
                               StringRef WorkingDirectory, DependencyConsumer &C)
-      : DependencyFileGenerator(*Opts), WorkingDirectory(WorkingDirectory),
+      : DepFileGenerator(*Opts), WorkingDirectory(WorkingDirectory),
         Opts(std::move(Opts)), C(C) {}
 
   void finishedMainFile(DiagnosticsEngine &Diags) override {
@@ -57,7 +57,7 @@ public:
 
 private:
   StringRef WorkingDirectory;
-  std::unique_ptr<DependencyOutputOptions> Opts;
+  std::unique_ptr<DepFileOutputOptions> Opts;
   DependencyConsumer &C;
 };
 
@@ -391,7 +391,7 @@ public:
     // invocation to the collector. The options in the invocation are reset,
     // which ensures that the compiler won't create new dependency collectors,
     // and thus won't write out the extra '.d' files to disk.
-    auto Opts = std::make_unique<DependencyOutputOptions>();
+    auto Opts = std::make_unique<DepFileOutputOptions>();
     std::swap(*Opts, ScanInstance.getInvocation().getDependencyOutputOpts());
     // We need at least one -MT equivalent for the generator of make dependency
     // files to work.

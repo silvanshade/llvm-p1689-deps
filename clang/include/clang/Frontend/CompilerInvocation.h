@@ -16,13 +16,13 @@
 #include "clang/Basic/LLVM.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/LangStandard.h"
-#include "clang/Frontend/DependencyOutputOptions.h"
+#include "clang/DependencyAnalysis/StructuredDependencyOutputOptions.h"
 #include "clang/Frontend/FrontendOptions.h"
 #include "clang/Frontend/MigratorOptions.h"
 #include "clang/Frontend/PreprocessorOutputOptions.h"
 #include "clang/StaticAnalyzer/Core/AnalyzerOptions.h"
-#include "llvm/ADT/IntrusiveRefCntPtr.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/IntrusiveRefCntPtr.h"
 #include <memory>
 #include <string>
 
@@ -46,6 +46,7 @@ class FileSystem;
 
 namespace clang {
 
+class DepFileOutputOptions;
 class DiagnosticsEngine;
 class HeaderSearchOptions;
 class PreprocessorOptions;
@@ -106,7 +107,10 @@ protected:
   std::shared_ptr<FrontendOptions> FrontendOpts;
 
   /// Options controlling dependency output.
-  std::shared_ptr<DependencyOutputOptions> DependencyOutputOpts;
+  std::shared_ptr<DepFileOutputOptions> DependencyOutputOpts;
+
+  std::shared_ptr<StructuredDependencyOutputOptions>
+      StructuredDependencyOutputOpts;
 
   /// Options controlling preprocessed output.
   std::shared_ptr<PreprocessorOutputOptions> PreprocessorOutputOpts;
@@ -139,8 +143,12 @@ public:
   const CodeGenOptions &getCodeGenOpts() const { return *CodeGenOpts; }
   const FileSystemOptions &getFileSystemOpts() const { return *FSOpts; }
   const FrontendOptions &getFrontendOpts() const { return *FrontendOpts; }
-  const DependencyOutputOptions &getDependencyOutputOpts() const {
+  const DepFileOutputOptions &getDependencyOutputOpts() const {
     return *DependencyOutputOpts;
+  }
+  const StructuredDependencyOutputOptions &
+  getStructuredDependencyOutputOpts() const {
+    return *StructuredDependencyOutputOpts;
   }
   const PreprocessorOutputOptions &getPreprocessorOutputOpts() const {
     return *PreprocessorOutputOpts;
@@ -241,6 +249,7 @@ public:
   using CompilerInvocationBase::getFileSystemOpts;
   using CompilerInvocationBase::getFrontendOpts;
   using CompilerInvocationBase::getDependencyOutputOpts;
+  using CompilerInvocationBase::getStructuredDependencyOutputOpts;
   using CompilerInvocationBase::getPreprocessorOutputOpts;
   /// @}
 
@@ -257,8 +266,11 @@ public:
   CodeGenOptions &getCodeGenOpts() { return *CodeGenOpts; }
   FileSystemOptions &getFileSystemOpts() { return *FSOpts; }
   FrontendOptions &getFrontendOpts() { return *FrontendOpts; }
-  DependencyOutputOptions &getDependencyOutputOpts() {
+  DepFileOutputOptions &getDependencyOutputOpts() {
     return *DependencyOutputOpts;
+  }
+  StructuredDependencyOutputOptions &getStructuredDependencyOutputOpts() {
+    return *StructuredDependencyOutputOpts;
   }
   PreprocessorOutputOptions &getPreprocessorOutputOpts() {
     return *PreprocessorOutputOpts;
@@ -394,7 +406,8 @@ public:
   CodeGenOptions &getMutCodeGenOpts();
   FileSystemOptions &getMutFileSystemOpts();
   FrontendOptions &getMutFrontendOpts();
-  DependencyOutputOptions &getMutDependencyOutputOpts();
+  DepFileOutputOptions &getMutDependencyOutputOpts();
+  StructuredDependencyOutputOptions &getMutStructuredDependencyOutputOpts();
   PreprocessorOutputOptions &getMutPreprocessorOutputOpts();
   /// @}
 };

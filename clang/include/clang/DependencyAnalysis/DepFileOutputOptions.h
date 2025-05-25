@@ -1,13 +1,5 @@
-//===--- DependencyOutputOptions.h ------------------------------*- C++ -*-===//
-//
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
-
-#ifndef LLVM_CLANG_FRONTEND_DEPENDENCYOUTPUTOPTIONS_H
-#define LLVM_CLANG_FRONTEND_DEPENDENCYOUTPUTOPTIONS_H
+#ifndef LLVM_CLANG_DEPENDENCYANALYSIS_DEPFILEOUTPUTOPTIONS_H
+#define LLVM_CLANG_DEPENDENCYANALYSIS_DEPFILEOUTPUTOPTIONS_H
 
 #include "clang/Basic/HeaderInclude.h"
 #include <string>
@@ -18,8 +10,8 @@ namespace clang {
 /// ShowIncludesDestination - Destination for /showIncludes output.
 enum class ShowIncludesDestination { None, Stdout, Stderr };
 
-/// DependencyOutputFormat - Format for the compiler dependency file.
-enum class DependencyOutputFormat { Make, NMake };
+/// DepFileOutputFormat - Format for the compiler dependency file.
+enum class DepFileOutputFormat { Make, NMake };
 
 /// ExtraDepKind - The kind of extra dependency file.
 enum ExtraDepKind {
@@ -29,9 +21,9 @@ enum ExtraDepKind {
   EDK_DepFileEntry,
 };
 
-/// DependencyOutputOptions - Options for controlling the compiler dependency
+/// DepFileOutputOptions - Options for controlling the compiler dependency
 /// file generation.
-class DependencyOutputOptions {
+class DepFileOutputOptions {
 public:
   LLVM_PREFERRED_TYPE(bool)
   unsigned IncludeSystemHeaders : 1; ///< Include system header dependencies.
@@ -61,7 +53,7 @@ public:
   ShowIncludesDestination ShowIncludesDest = ShowIncludesDestination::None;
 
   /// The format for the dependency file.
-  DependencyOutputFormat OutputFormat = DependencyOutputFormat::Make;
+  DepFileOutputFormat OutputFormat = DepFileOutputFormat::Make;
 
   /// The file to write dependency output to.
   std::string OutputFile;
@@ -87,7 +79,7 @@ public:
   std::string ModuleDependencyOutputDir;
 
 public:
-  DependencyOutputOptions()
+  DepFileOutputOptions()
       : IncludeSystemHeaders(0), ShowHeaderIncludes(0), UsePhonyTargets(0),
         AddMissingHeaderDeps(0), IncludeModuleFiles(0),
         ShowSkippedHeaderIncludes(0), HeaderIncludeFormat(HIFMT_Textual),

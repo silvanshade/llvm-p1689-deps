@@ -18,17 +18,14 @@ add_clang_library(clangFrontend
   CompilerInstance.cpp
   CompilerInvocation.cpp
   CreateInvocationFromCommandLine.cpp
-  DependencyFile.cpp
   DependencyGraph.cpp
   DiagnosticRenderer.cpp
   FrontendAction.cpp
   FrontendActions.cpp
   FrontendOptions.cpp
-  HeaderIncludeGen.cpp
   InitPreprocessor.cpp
   LayoutOverrideSource.cpp
   LogDiagnosticPrinter.cpp
-  ModuleDependencyCollector.cpp
   MultiplexConsumer.cpp
   PrecompiledPreamble.cpp
   PrintPreprocessedOutput.cpp
@@ -51,6 +48,7 @@ add_clang_library(clangFrontend
   clangAPINotes
   clangAST
   clangBasic
+  clangDependencyAnalysis
   clangDriver
   clangEdit
   clangLex

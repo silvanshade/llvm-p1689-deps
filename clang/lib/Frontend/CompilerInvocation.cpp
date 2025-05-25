@@ -27,11 +27,13 @@
 #include "clang/Basic/Visibility.h"
 #include "clang/Basic/XRayInstr.h"
 #include "clang/Config/config.h"
+#include "clang/DependencyAnalysis/DepFileOutputOptions.h"
+#include "clang/DependencyAnalysis/StructuredDependencyOutputOptions.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Driver/DriverDiagnostic.h"
+#include "clang/Driver/OptionUtils.h"
 #include "clang/Driver/Options.h"
 #include "clang/Frontend/CommandLineSourceLoc.h"
-#include "clang/Frontend/DependencyOutputOptions.h"
 #include "clang/Frontend/FrontendDiagnostic.h"
 #include "clang/Frontend/FrontendOptions.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
@@ -148,7 +150,9 @@ CompilerInvocationBase::CompilerInvocationBase()
       CodeGenOpts(std::make_shared<CodeGenOptions>()),
       FSOpts(std::make_shared<FileSystemOptions>()),
       FrontendOpts(std::make_shared<FrontendOptions>()),
-      DependencyOutputOpts(std::make_shared<DependencyOutputOptions>()),
+      DependencyOutputOpts(std::make_shared<DepFileOutputOptions>()),
+      StructuredDependencyOutputOpts(
+          std::make_shared<StructuredDependencyOutputOptions>()),
       PreprocessorOutputOpts(std::make_shared<PreprocessorOutputOptions>()) {}
 
 CompilerInvocationBase &
@@ -166,6 +170,8 @@ CompilerInvocationBase::deep_copy_assign(const CompilerInvocationBase &X) {
     FSOpts = make_shared_copy(X.getFileSystemOpts());
     FrontendOpts = make_shared_copy(X.getFrontendOpts());
     DependencyOutputOpts = make_shared_copy(X.getDependencyOutputOpts());
+    StructuredDependencyOutputOpts =
+        make_shared_copy(X.getStructuredDependencyOutputOpts());
     PreprocessorOutputOpts = make_shared_copy(X.getPreprocessorOutputOpts());
   }
   return *this;
@@ -186,6 +192,7 @@ CompilerInvocationBase::shallow_copy_assign(const CompilerInvocationBase &X) {
     FSOpts = X.FSOpts;
     FrontendOpts = X.FrontendOpts;
     DependencyOutputOpts = X.DependencyOutputOpts;
+    StructuredDependencyOutputOpts = X.StructuredDependencyOutputOpts;
     PreprocessorOutputOpts = X.PreprocessorOutputOpts;
   }
   return *this;
@@ -262,8 +269,13 @@ FrontendOptions &CowCompilerInvocation::getMutFrontendOpts() {
   return ensureOwned(FrontendOpts);
 }
 
-DependencyOutputOptions &CowCompilerInvocation::getMutDependencyOutputOpts() {
+DepFileOutputOptions &CowCompilerInvocation::getMutDependencyOutputOpts() {
   return ensureOwned(DependencyOutputOpts);
+}
+
+StructuredDependencyOutputOptions &
+CowCompilerInvocation::getMutStructuredDependencyOutputOpts() {
+  return ensureOwned(StructuredDependencyOutputOpts);
 }
 
 PreprocessorOutputOptions &
@@ -2333,9 +2345,9 @@ bool CompilerInvocation::ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args,
   return Diags.getNumErrors() == NumErrorsBefore;
 }
 
-static void GenerateDependencyOutputArgs(const DependencyOutputOptions &Opts,
+static void GenerateDependencyOutputArgs(const DepFileOutputOptions &Opts,
                                          ArgumentConsumer Consumer) {
-  const DependencyOutputOptions &DependencyOutputOpts = Opts;
+  const DepFileOutputOptions &DependencyOutputOpts = Opts;
 #define DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING(...)                         \
   GENERATE_OPTION_WITH_MARSHALLING(Consumer, __VA_ARGS__)
 #include "clang/Driver/Options.inc"
@@ -2364,13 +2376,13 @@ static void GenerateDependencyOutputArgs(const DependencyOutputOptions &Opts,
   }
 }
 
-static bool ParseDependencyOutputArgs(DependencyOutputOptions &Opts,
-                                      ArgList &Args, DiagnosticsEngine &Diags,
+static bool ParseDependencyOutputArgs(DepFileOutputOptions &Opts, ArgList &Args,
+                                      DiagnosticsEngine &Diags,
                                       frontend::ActionKind Action,
                                       bool ShowLineMarkers) {
   unsigned NumErrorsBefore = Diags.getNumErrors();
 
-  DependencyOutputOptions &DependencyOutputOpts = Opts;
+  DepFileOutputOptions &DependencyOutputOpts = Opts;
 #define DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING(...)                         \
   PARSE_OPTION_WITH_MARSHALLING(Args, Diags, __VA_ARGS__)
 #include "clang/Driver/Options.inc"
@@ -2430,6 +2442,32 @@ static bool ParseDependencyOutputArgs(DependencyOutputOptions &Opts,
     Diags.Report(diag::err_drv_print_header_env_var_combination_cc1)
         << Args.getLastArg(OPT_header_include_format_EQ)->getValue()
         << Args.getLastArg(OPT_header_include_filtering_EQ)->getValue();
+
+  return Diags.getNumErrors() == NumErrorsBefore;
+}
+
+static void GenerateStructuredDependencyOutputArgs(
+    const StructuredDependencyOutputOptions &Opts, ArgumentConsumer Consumer) {
+  const StructuredDependencyOutputOptions &StructuredDependencyOutputOpts =
+      Opts;
+#define STRUCTURED_DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING(...)              \
+  GENERATE_OPTION_WITH_MARSHALLING(Consumer, __VA_ARGS__)
+#include "clang/Driver/Options.inc"
+#undef STRUCTURED_DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING
+}
+
+static bool
+ParseStructuredDependencyOutputArgs(StructuredDependencyOutputOptions &Opts,
+                                    ArgList &Args, DiagnosticsEngine &Diags,
+                                    frontend::ActionKind Action,
+                                    bool ShowLineMarkers) {
+  unsigned NumErrorsBefore = Diags.getNumErrors();
+
+  StructuredDependencyOutputOptions &StructuredDependencyOutputOpts = Opts;
+#define STRUCTURED_DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING(...)              \
+  PARSE_OPTION_WITH_MARSHALLING(Args, Diags, __VA_ARGS__)
+#include "clang/Driver/Options.inc"
+#undef STRUCTURED_DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING
 
   return Diags.getNumErrors() == NumErrorsBefore;
 }
@@ -5015,6 +5053,11 @@ bool CompilerInvocation::CreateFromArgsImpl(
       Res.getDependencyOutputOpts().Targets.empty())
     Diags.Report(diag::err_fe_dependency_file_requires_MT);
 
+  ParseStructuredDependencyOutputArgs(
+      Res.getStructuredDependencyOutputOpts(), Args, Diags,
+      Res.getFrontendOpts().ProgramAction,
+      Res.getPreprocessorOutputOpts().ShowLineMarkers);
+
   // If sanitizer is enabled, disable OPT_ffine_grained_bitfield_accesses.
   if (Res.getCodeGenOpts().FineGrainedBitfieldAccesses &&
       !Res.getLangOpts().Sanitize.empty()) {
@@ -5206,6 +5249,8 @@ void CompilerInvocationBase::generateCC1CommandLine(
   GeneratePreprocessorOutputArgs(getPreprocessorOutputOpts(), Consumer,
                                  getFrontendOpts().ProgramAction);
   GenerateDependencyOutputArgs(getDependencyOutputOpts(), Consumer);
+  GenerateStructuredDependencyOutputArgs(getStructuredDependencyOutputOpts(),
+                                         Consumer);
 }
 
 std::vector<std::string> CompilerInvocationBase::getCC1CommandLine() const {

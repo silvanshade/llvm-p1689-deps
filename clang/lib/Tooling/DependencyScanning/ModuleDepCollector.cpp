@@ -749,10 +749,9 @@ void ModuleDepCollectorPP::addAffectingClangModule(
 }
 
 ModuleDepCollector::ModuleDepCollector(
-    std::unique_ptr<DependencyOutputOptions> Opts,
-    CompilerInstance &ScanInstance, DependencyConsumer &C,
-    DependencyActionController &Controller, CompilerInvocation OriginalCI,
-    PrebuiltModuleVFSMapT PrebuiltModuleVFSMap,
+    std::unique_ptr<DepFileOutputOptions> Opts, CompilerInstance &ScanInstance,
+    DependencyConsumer &C, DependencyActionController &Controller,
+    CompilerInvocation OriginalCI, PrebuiltModuleVFSMapT PrebuiltModuleVFSMap,
     ScanningOptimizations OptimizeArgs, bool EagerLoadModules,
     bool IsStdModuleP1689Format)
     : ScanInstance(ScanInstance), Consumer(C), Controller(Controller),

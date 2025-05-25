@@ -160,7 +160,7 @@ public:
     Commands.push_back(std::move(Cmd));
   }
 
-  void handleDependencyOutputOpts(const DependencyOutputOptions &) override {}
+  void handleDependencyOutputOpts(const DepFileOutputOptions &) override {}
 
   void handleFileDependency(StringRef File) override {
     Dependencies.push_back(std::string(File));

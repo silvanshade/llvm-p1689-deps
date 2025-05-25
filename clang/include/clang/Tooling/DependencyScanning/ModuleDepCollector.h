@@ -12,8 +12,9 @@
 #include "clang/Basic/LLVM.h"
 #include "clang/Basic/Module.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/DependencyAnalysis/DepFileOutputOptions.h"
+#include "clang/DependencyAnalysis/DependencyCollector.h"
 #include "clang/Frontend/CompilerInvocation.h"
-#include "clang/Frontend/Utils.h"
 #include "clang/Lex/HeaderSearch.h"
 #include "clang/Lex/PPCallbacks.h"
 #include "clang/Serialization/ASTReader.h"
@@ -28,6 +29,9 @@
 #include <variant>
 
 namespace clang {
+
+class CompilerInstance;
+
 namespace tooling {
 namespace dependencies {
 
@@ -225,7 +229,7 @@ private:
 /// \c ModuleDepCollectorPP to the preprocessor.
 class ModuleDepCollector final : public DependencyCollector {
 public:
-  ModuleDepCollector(std::unique_ptr<DependencyOutputOptions> Opts,
+  ModuleDepCollector(std::unique_ptr<DepFileOutputOptions> Opts,
                      CompilerInstance &ScanInstance, DependencyConsumer &C,
                      DependencyActionController &Controller,
                      CompilerInvocation OriginalCI,
@@ -268,7 +272,7 @@ private:
   /// Working set of direct modular dependencies.
   llvm::SetVector<const Module *> DirectModularDeps;
   /// Options that control the dependency output generation.
-  std::unique_ptr<DependencyOutputOptions> Opts;
+  std::unique_ptr<DepFileOutputOptions> Opts;
   /// A Clang invocation that's based on the original TU invocation and that has
   /// been partially transformed into one that can perform explicit build of
   /// a discovered modular dependency. Note that this still needs to be adjusted

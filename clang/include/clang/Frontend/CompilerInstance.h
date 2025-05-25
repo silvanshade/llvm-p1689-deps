@@ -13,6 +13,7 @@
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/TargetInfo.h"
+#include "clang/DependencyAnalysis/StructuredDependencyOutputOptions.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/PCHContainerOperations.h"
 #include "clang/Frontend/Utils.h"
@@ -47,12 +48,15 @@ class ModuleFile;
 }
 
 class CodeCompleteConsumer;
+class DependencyCollector;
 class DiagnosticsEngine;
 class DiagnosticConsumer;
+class ExternalSemaSource;
 class FileManager;
 class FrontendAction;
 class InMemoryModuleCache;
 class Module;
+class ModuleFileCollector;
 class Preprocessor;
 class Sema;
 class SourceManager;
@@ -127,7 +131,7 @@ class CompilerInstance : public ModuleLoader {
   IntrusiveRefCntPtr<ASTReader> TheASTReader;
 
   /// The module dependency collector for crashdumps
-  std::shared_ptr<ModuleDependencyCollector> ModuleDepCollector;
+  std::shared_ptr<ModuleFileCollector> ModuleDepCollector;
 
   /// The module provider.
   std::shared_ptr<PCHContainerOperations> ThePCHContainerOperations;
@@ -288,11 +292,19 @@ public:
     return Invocation->getCodeGenOpts();
   }
 
-  DependencyOutputOptions &getDependencyOutputOpts() {
+  DepFileOutputOptions &getDependencyOutputOpts() {
     return Invocation->getDependencyOutputOpts();
   }
-  const DependencyOutputOptions &getDependencyOutputOpts() const {
+  const DepFileOutputOptions &getDependencyOutputOpts() const {
     return Invocation->getDependencyOutputOpts();
+  }
+
+  StructuredDependencyOutputOptions &getStructuredDependencyOutputOpts() {
+    return Invocation->getStructuredDependencyOutputOpts();
+  }
+  const StructuredDependencyOutputOptions &
+  getStructuredDependencyOutputOpts() const {
+    return Invocation->getStructuredDependencyOutputOpts();
   }
 
   DiagnosticOptions &getDiagnosticOpts() {
@@ -574,9 +586,8 @@ public:
   IntrusiveRefCntPtr<ASTReader> getASTReader() const;
   void setASTReader(IntrusiveRefCntPtr<ASTReader> Reader);
 
-  std::shared_ptr<ModuleDependencyCollector> getModuleDepCollector() const;
-  void setModuleDepCollector(
-      std::shared_ptr<ModuleDependencyCollector> Collector);
+  std::shared_ptr<ModuleFileCollector> getModuleDepCollector() const;
+  void setModuleDepCollector(std::shared_ptr<ModuleFileCollector> Collector);
 
   std::shared_ptr<PCHContainerOperations> getPCHContainerOperations() const {
     return ThePCHContainerOperations;
