@@ -192,7 +192,7 @@ void HeaderSearch::getHeaderMapFileNames(
     Names.push_back(std::string(HM.first.getName()));
 }
 
-std::string HeaderSearch::getCachedModuleFileName(Module *Module) {
+std::string HeaderSearch::getCachedModuleFileName(const Module *Module) {
   OptionalFileEntryRef ModuleMap =
       getModuleMap().getModuleMapFileForUniquing(Module);
   // The ModuleMap maybe a nullptr, when we load a cached C++ module without

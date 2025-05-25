@@ -1,26 +1,18 @@
-//===-- HeaderIncludeGen.cpp - Generate Header Includes -------------------===//
-//
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
-
-#include "clang/Frontend/DependencyOutputOptions.h"
-#include "clang/Frontend/Utils.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/Frontend/FrontendDiagnostic.h"
+#include "clang/Basic/DiagnosticFrontend.h"
+#include "clang/DependencyAnalysis/DepFileOutputOptions.h"
+#include "clang/DependencyAnalysis/HeaderIncludeGenerator.h"
 #include "clang/Lex/Preprocessor.h"
-#include "llvm/ADT/SmallString.h"
 #include "llvm/Support/JSON.h"
 #include "llvm/Support/raw_ostream.h"
+
 using namespace clang;
 
 namespace {
 class HeaderIncludesCallback : public PPCallbacks {
   SourceManager &SM;
   raw_ostream *OutputFile;
-  const DependencyOutputOptions &DepOpts;
+  const DepFileOutputOptions &DepOpts;
   unsigned CurrentIncludeDepth;
   bool HasProcessedPredefines;
   bool OwnsOutputFile;
@@ -31,7 +23,7 @@ class HeaderIncludesCallback : public PPCallbacks {
 public:
   HeaderIncludesCallback(const Preprocessor *PP, bool ShowAllHeaders_,
                          raw_ostream *OutputFile_,
-                         const DependencyOutputOptions &DepOpts,
+                         const DepFileOutputOptions &DepOpts,
                          bool OwnsOutputFile_, bool ShowDepth_, bool MSStyle_)
       : SM(PP->getSourceManager()), OutputFile(OutputFile_), DepOpts(DepOpts),
         CurrentIncludeDepth(0), HasProcessedPredefines(false),
@@ -106,7 +98,7 @@ public:
   void FileSkipped(const FileEntryRef &SkippedFile, const Token &FilenameTok,
                    SrcMgr::CharacteristicKind FileType) override;
 };
-}
+} // namespace
 
 static void PrintHeaderInfo(raw_ostream *OutputFile, StringRef Filename,
                             bool ShowDepth, unsigned CurrentIncludeDepth,
@@ -135,10 +127,11 @@ static void PrintHeaderInfo(raw_ostream *OutputFile, StringRef Filename,
   OutputFile->flush();
 }
 
-void clang::AttachHeaderIncludeGen(Preprocessor &PP,
-                                   const DependencyOutputOptions &DepOpts,
-                                   bool ShowAllHeaders, StringRef OutputPath,
-                                   bool ShowDepth, bool MSStyle) {
+void clang::AttachHeaderIncludeGenerator(Preprocessor &PP,
+                                         const DepFileOutputOptions &DepOpts,
+                                         bool ShowAllHeaders,
+                                         StringRef OutputPath, bool ShowDepth,
+                                         bool MSStyle) {
   raw_ostream *OutputFile = &llvm::errs();
   bool OwnsOutputFile = false;
 

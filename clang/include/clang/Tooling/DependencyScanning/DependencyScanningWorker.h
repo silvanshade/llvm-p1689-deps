@@ -12,7 +12,7 @@
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/LLVM.h"
-#include "clang/Frontend/PCHContainerOperations.h"
+#include "clang/Serialization/PCHContainerOperations.h"
 #include "clang/Tooling/DependencyScanning/DependencyScanningService.h"
 #include "clang/Tooling/DependencyScanning/ModuleDepCollector.h"
 #include "llvm/Support/Error.h"
@@ -47,8 +47,7 @@ public:
 
   virtual void handleBuildCommand(Command Cmd) {}
 
-  virtual void
-  handleDependencyOutputOpts(const DependencyOutputOptions &Opts) = 0;
+  virtual void handleDependencyOutputOpts(const DepFileOutputOptions &Opts) = 0;
 
   virtual void handleFileDependency(StringRef Filename) = 0;
 

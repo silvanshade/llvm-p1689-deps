@@ -8,7 +8,7 @@
 
 #include "Compiler.h"
 #include "TestTU.h"
-#include "clang/Frontend/DependencyOutputOptions.h"
+#include "clang/Frontend/DepFileOutputOptions.h"
 #include "clang/Frontend/FrontendOptions.h"
 #include "clang/Lex/PreprocessorOptions.h"
 #include "gmock/gmock.h"
