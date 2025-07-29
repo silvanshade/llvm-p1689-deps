@@ -12,6 +12,7 @@
 #include "clang/Basic/LLVM.h"
 #include "clang/Basic/Module.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/DependencyAnalysis/DependencyCollector.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/Utils.h"
 #include "clang/Lex/HeaderSearch.h"

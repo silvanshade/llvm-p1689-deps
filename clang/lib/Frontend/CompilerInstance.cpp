@@ -20,6 +20,8 @@
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Basic/Version.h"
 #include "clang/Config/config.h"
+#include "clang/DependencyAnalysis/DependencyFileGenerator.h"
+#include "clang/DependencyAnalysis/ModuleDependencyCollector.h"
 #include "clang/Frontend/ChainedDiagnosticConsumer.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Frontend/FrontendActions.h"

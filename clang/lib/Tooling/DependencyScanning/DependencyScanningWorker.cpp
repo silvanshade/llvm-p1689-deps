@@ -10,6 +10,7 @@
 #include "clang/Basic/DiagnosticDriver.h"
 #include "clang/Basic/DiagnosticFrontend.h"
 #include "clang/Basic/DiagnosticSerialization.h"
+#include "clang/DependencyAnalysis/DependencyFileGenerator.h"
 #include "clang/Driver/Compilation.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Driver/Job.h"

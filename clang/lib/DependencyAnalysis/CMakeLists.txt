@@ -4,6 +4,7 @@ set(LLVM_LINK_COMPONENTS
 
 add_clang_library(clangDependencyAnalysis
   DependencyFile.cpp
+  DependencyFileGenerator.cpp
   HeaderIncludeGen.cpp
   ModuleDependencyCollector.cpp
 

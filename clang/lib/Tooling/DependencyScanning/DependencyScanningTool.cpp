@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "clang/DependencyAnalysis/DependencyFileGenerator.h"
 #include "clang/Tooling/DependencyScanning/DependencyScanningTool.h"
 #include "clang/Frontend/Utils.h"
 #include <optional>

@@ -48,12 +48,14 @@ class ModuleFile;
 }
 
 class CodeCompleteConsumer;
+class DependencyCollector;
 class DiagnosticsEngine;
 class DiagnosticConsumer;
 class FileManager;
 class FrontendAction;
 class Module;
 class ModuleCache;
+class ModuleDependencyCollector;
 class Preprocessor;
 class Sema;
 class SourceManager;

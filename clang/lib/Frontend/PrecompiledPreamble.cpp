@@ -13,6 +13,7 @@
 #include "clang/Frontend/PrecompiledPreamble.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/LangStandard.h"
+#include "clang/DependencyAnalysis/DependencyCollector.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/FrontendActions.h"

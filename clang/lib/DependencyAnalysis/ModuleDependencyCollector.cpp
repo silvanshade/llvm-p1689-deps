@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/Basic/CharInfo.h"
+#include "clang/DependencyAnalysis/ModuleDependencyCollector.h"
 #include "clang/Frontend/Utils.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Serialization/ASTReader.h"
