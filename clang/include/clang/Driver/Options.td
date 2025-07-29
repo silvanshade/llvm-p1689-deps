@@ -343,6 +343,10 @@ class AnalyzerOpts<string base>
 class MigratorOpts<string base>
   : KeyPathAndMacro<"MigratorOpts.", base, "MIGRATOR_"> {}
 
+class StructuredDependencyOutputOpts<string base>
+  : KeyPathAndMacro<"StructuredDependencyOutputOpts.", base, "STRUCTURED_DEPENDENCY_OUTPUT_"> {
+  }
+
 // A boolean option which is opt-in in CC1. The positive option exists in CC1 and
 // Args.hasArg(OPT_ffoo) can be used to check that the flag is enabled.
 // This is useful if the option is usually disabled.
@@ -3474,6 +3478,20 @@ def fmodule_header_EQ : Joined<["-"], "fmodule-header=">, Group<f_Group>,
   Visibility<[ClangOption, CLOption]>,
   MetaVarName<"<kind>">,
   HelpText<"Build a C++20 Header Unit from a header that should be found in the user (fmodule-header=user) or system (fmodule-header=system) search path.">;
+
+def fdeps_file : Flag <["-"], "fdeps-file">, Group<Preprocessor_Group>,
+  Visibility<[ClangOption, CLOption]>,
+  HelpText<"Write structured dependency information to <file> chosen from input name">;
+def fdeps_file_EQ : Joined <["-"], "fdeps-file=">, Group<Preprocessor_Group>,
+  Visibility<[ClangOption, CLOption, CC1Option]>, MetaVarName<"<file>">,
+  HelpText<"Write structured dependency information to <file>">,
+  MarshallingInfoString<StructuredDependencyOutputOpts<"OutputFile">>;
+def fdeps_format_EQ : Joined <["-"], "fdeps-format=">, Group<Preprocessor_Group>,
+  Visibility<[ClangOption, CLOption, CC1Option]>, MetaVarName<"<format>">,
+  HelpText<"Write structured dependency information as <format>">,
+  Values<"p1689r5">,
+  NormalizedValues<["StructuredDependencyOutputFormat::P1689r5"]>,
+  MarshallingInfoFlag<StructuredDependencyOutputOpts<"OutputFormat">, "StructuredDependencyOutputFormat::P1689r5">;
 
 def fno_knr_functions : Flag<["-"], "fno-knr-functions">, Group<f_Group>,
   MarshallingInfoFlag<LangOpts<"DisableKNRFunctions">>,
