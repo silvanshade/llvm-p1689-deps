@@ -109,6 +109,9 @@ protected:
   /// Options controlling dependency output.
   std::shared_ptr<DependencyOutputOptions> DependencyOutputOpts;
 
+  std::shared_ptr<StructuredDependencyOutputOptions>
+      StructuredDependencyOutputOpts;
+
   /// Options controlling preprocessed output.
   std::shared_ptr<PreprocessorOutputOptions> PreprocessorOutputOpts;
 
@@ -142,6 +145,10 @@ public:
   const FrontendOptions &getFrontendOpts() const { return *FrontendOpts; }
   const DependencyOutputOptions &getDependencyOutputOpts() const {
     return *DependencyOutputOpts;
+  }
+  const StructuredDependencyOutputOptions &
+  getStructuredDependencyOutputOpts() const {
+    return *StructuredDependencyOutputOpts;
   }
   const PreprocessorOutputOptions &getPreprocessorOutputOpts() const {
     return *PreprocessorOutputOpts;
@@ -242,6 +249,7 @@ public:
   using CompilerInvocationBase::getFileSystemOpts;
   using CompilerInvocationBase::getFrontendOpts;
   using CompilerInvocationBase::getDependencyOutputOpts;
+  using CompilerInvocationBase::getStructuredDependencyOutputOpts;
   using CompilerInvocationBase::getPreprocessorOutputOpts;
   /// @}
 
@@ -260,6 +268,9 @@ public:
   FrontendOptions &getFrontendOpts() { return *FrontendOpts; }
   DependencyOutputOptions &getDependencyOutputOpts() {
     return *DependencyOutputOpts;
+  }
+  StructuredDependencyOutputOptions &getStructuredDependencyOutputOpts() {
+    return *StructuredDependencyOutputOpts;
   }
   PreprocessorOutputOptions &getPreprocessorOutputOpts() {
     return *PreprocessorOutputOpts;
@@ -382,6 +393,7 @@ public:
   FileSystemOptions &getMutFileSystemOpts();
   FrontendOptions &getMutFrontendOpts();
   DependencyOutputOptions &getMutDependencyOutputOpts();
+  StructuredDependencyOutputOptions &getMutStructuredDependencyOutputOpts();
   PreprocessorOutputOptions &getMutPreprocessorOutputOpts();
   /// @}
 };

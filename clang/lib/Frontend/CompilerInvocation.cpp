@@ -26,6 +26,7 @@
 #include "clang/Basic/Version.h"
 #include "clang/Basic/XRayInstr.h"
 #include "clang/Config/config.h"
+#include "clang/DependencyAnalysis/StructuredDependencyOutputOptions.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Driver/Options.h"
 #include "clang/Frontend/CommandLineSourceLoc.h"
@@ -135,6 +136,8 @@ CompilerInvocationBase::CompilerInvocationBase()
       FSOpts(std::make_shared<FileSystemOptions>()),
       FrontendOpts(std::make_shared<FrontendOptions>()),
       DependencyOutputOpts(std::make_shared<DependencyOutputOptions>()),
+      StructuredDependencyOutputOpts(
+          std::make_shared<StructuredDependencyOutputOptions>()),
       PreprocessorOutputOpts(std::make_shared<PreprocessorOutputOptions>()) {}
 
 CompilerInvocationBase &
@@ -152,6 +155,8 @@ CompilerInvocationBase::deep_copy_assign(const CompilerInvocationBase &X) {
     FSOpts = make_shared_copy(X.getFileSystemOpts());
     FrontendOpts = make_shared_copy(X.getFrontendOpts());
     DependencyOutputOpts = make_shared_copy(X.getDependencyOutputOpts());
+    StructuredDependencyOutputOpts =
+        make_shared_copy(X.getStructuredDependencyOutputOpts());
     PreprocessorOutputOpts = make_shared_copy(X.getPreprocessorOutputOpts());
   }
   return *this;
@@ -172,6 +177,7 @@ CompilerInvocationBase::shallow_copy_assign(const CompilerInvocationBase &X) {
     FSOpts = X.FSOpts;
     FrontendOpts = X.FrontendOpts;
     DependencyOutputOpts = X.DependencyOutputOpts;
+    StructuredDependencyOutputOpts = X.StructuredDependencyOutputOpts;
     PreprocessorOutputOpts = X.PreprocessorOutputOpts;
   }
   return *this;
@@ -241,6 +247,11 @@ FrontendOptions &CowCompilerInvocation::getMutFrontendOpts() {
 
 DependencyOutputOptions &CowCompilerInvocation::getMutDependencyOutputOpts() {
   return ensureOwned(DependencyOutputOpts);
+}
+
+StructuredDependencyOutputOptions &
+CowCompilerInvocation::getMutStructuredDependencyOutputOpts() {
+  return ensureOwned(StructuredDependencyOutputOpts);
 }
 
 PreprocessorOutputOptions &
@@ -2487,6 +2498,32 @@ static bool ParseDependencyOutputArgs(DependencyOutputOptions &Opts,
       Diags.Report(diag::err_drv_print_header_cc1_invalid_format)
           << headerIncludeFormatKindToString(Opts.HeaderIncludeFormat);
   }
+
+  return Diags.getNumErrors() == NumErrorsBefore;
+}
+
+static void GenerateStructuredDependencyOutputArgs(
+    const StructuredDependencyOutputOptions &Opts, ArgumentConsumer Consumer) {
+  const StructuredDependencyOutputOptions &StructuredDependencyOutputOpts =
+      Opts;
+#define STRUCTURED_DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING(...)              \
+  GENERATE_OPTION_WITH_MARSHALLING(Consumer, __VA_ARGS__)
+#include "clang/Driver/Options.inc"
+#undef STRUCTURED_DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING
+}
+
+static bool
+ParseStructuredDependencyOutputArgs(StructuredDependencyOutputOptions &Opts,
+                                    ArgList &Args, DiagnosticsEngine &Diags,
+                                    frontend::ActionKind Action,
+                                    bool ShowLineMarkers) {
+  unsigned NumErrorsBefore = Diags.getNumErrors();
+
+  StructuredDependencyOutputOptions &StructuredDependencyOutputOpts = Opts;
+#define STRUCTURED_DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING(...)              \
+  PARSE_OPTION_WITH_MARSHALLING(Args, Diags, __VA_ARGS__)
+#include "clang/Driver/Options.inc"
+#undef STRUCTURED_DEPENDENCY_OUTPUT_OPTION_WITH_MARSHALLING
 
   return Diags.getNumErrors() == NumErrorsBefore;
 }
